@@ -9,4 +9,4 @@ const db = mysql.createPool({
   database: process.env.MYSQLDATABASE,
 });
 
-module.exports = pool.promise();
+module.exports = db
