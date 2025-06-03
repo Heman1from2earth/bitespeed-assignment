@@ -4,7 +4,7 @@ const identifyRoute = require("./routes/identify");
 require("dotenv").config();
 
 app.use(express.json());
-app.use("/identify", identifyRoute);
+app.use("/", identifyRoute);
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
