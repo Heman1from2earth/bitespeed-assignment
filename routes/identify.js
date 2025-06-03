@@ -16,9 +16,9 @@ router.post("/identify", async (req, res) => {
     );
 
     if (contacts.length === 0) {
-      // No match: create a new primary contact
       const [result] = await db.query(
-        `INSERT INTO Contact (email, phoneNumber, linkPrecedence, createdAt, updatedAt) VALUES (?, ?, 'primary', NOW(), NOW())`,
+        `INSERT INTO Contact (email, phoneNumber, linkPrecedence, createdAt, updatedAt)
+         VALUES (?, ?, 'primary', NOW(), NOW())`,
         [email, phoneNumber]
       );
 
@@ -32,14 +32,9 @@ router.post("/identify", async (req, res) => {
       });
     }
 
-    // Resolve primary
-    let primary =
-      contacts.find((c) => c.linkPrecedence === "primary") || contacts[0];
+    let primary = contacts.find(c => c.linkPrecedence === "primary") || contacts[0];
     if (primary.linkedId) {
-      const [primaryRow] = await db.query(
-        `SELECT * FROM Contact WHERE id = ?`,
-        [primary.linkedId]
-      );
+      const [primaryRow] = await db.query(`SELECT * FROM Contact WHERE id = ?`, [primary.linkedId]);
       if (primaryRow.length) primary = primaryRow[0];
     }
 
@@ -48,21 +43,20 @@ router.post("/identify", async (req, res) => {
       [primary.id, primary.id]
     );
 
-    const emails = [...new Set(allRelated.map((c) => c.email).filter(Boolean))];
-    const phones = [
-      ...new Set(allRelated.map((c) => c.phoneNumber).filter(Boolean)),
-    ];
+    const emails = [...new Set(allRelated.map(c => c.email).filter(Boolean))];
+    const phones = [...new Set(allRelated.map(c => c.phoneNumber).filter(Boolean))];
     const secondaryIds = allRelated
-      .filter((c) => c.linkPrecedence === "secondary")
-      .map((c) => c.id);
+      .filter(c => c.linkPrecedence === "secondary")
+      .map(c => c.id);
 
-    const exists = allRelated.some(
-      (c) => c.email === email && c.phoneNumber === phoneNumber
+    const alreadyExists = allRelated.some(
+      c => c.email === email && c.phoneNumber === phoneNumber
     );
-    if (!exists) {
-      // Insert new secondary if data is new
+
+    if (!alreadyExists) {
       await db.query(
-        `INSERT INTO Contact (email, phoneNumber, linkPrecedence, linkedId, createdAt, updatedAt) VALUES (?, ?, 'secondary', ?, NOW(), NOW())`,
+        `INSERT INTO Contact (email, phoneNumber, linkPrecedence, linkedId, createdAt, updatedAt)
+         VALUES (?, ?, 'secondary', ?, NOW(), NOW())`,
         [email, phoneNumber, primary.id]
       );
     }
@@ -72,15 +66,11 @@ router.post("/identify", async (req, res) => {
       [primary.id, primary.id]
     );
 
-    const finalEmails = [
-      ...new Set(finalContacts.map((c) => c.email).filter(Boolean)),
-    ];
-    const finalPhones = [
-      ...new Set(finalContacts.map((c) => c.phoneNumber).filter(Boolean)),
-    ];
+    const finalEmails = [...new Set(finalContacts.map(c => c.email).filter(Boolean))];
+    const finalPhones = [...new Set(finalContacts.map(c => c.phoneNumber).filter(Boolean))];
     const finalSecondaryIds = finalContacts
-      .filter((c) => c.linkPrecedence === "secondary")
-      .map((c) => c.id);
+      .filter(c => c.linkPrecedence === "secondary")
+      .map(c => c.id);
 
     res.json({
       contact: {
@@ -91,7 +81,7 @@ router.post("/identify", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in /identify:", error);
     res.status(500).json({ error: "Something went wrong" });
   }
 });
